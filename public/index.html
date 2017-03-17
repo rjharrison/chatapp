@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat (Hire Richard)</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="/main.css" />
+
+</head>
+<body>
+
+<div class="container">
+
+    <div class="js-login">
+        <h2>Hello, what's your name?</h2>
+        <input class="js-name" type="text" width="100"/>
+        <input class="btn btn-success js-login-button" type="button" value="Login">
+    </div>
+
+
+    <div class="js-chat chat">
+        <h2>Pick someone to chat with...</h2>
+
+        <div class="js-sadtimes sadtimes">Sad times! You have no friends online! Maybe someone will log in soon?</div>
+
+        <div class="js-chat-controls">
+            <select class="js-userlist userlist"></select>
+            <input class="js-message" type="text" width="100"/>
+            <input class="js-send-message" type="button" value="send"/>
+        </div>
+    </div>
+
+    <hr/>
+    <div class="js-chat-container"></div>
+</div>
+
+
+
+<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+<script src="/main.js"></script>
+</body>
+</html>
