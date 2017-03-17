@@ -1,6 +1,6 @@
 {
   "name": "chat2",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "POC Chat App",
   "main": "index.js",
   "scripts": {
@@ -10,8 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.15.2",
-    "react": "^15.4.2",
-    "react-dom": "^15.4.2",
     "socket.io": "^1.7.3"
   }
 }
