@@ -1,6 +1,7 @@
 $(function(){
 
-    var userId, token = 'abc123';
+    // dirty globals. @todo refactor
+    var userId, socket, token = 'abc123';
 
     $('.js-login-button').on('click', function(){
        var name = $('.js-name').val();
@@ -15,12 +16,14 @@ $(function(){
        $('.js-login').fadeOut(200, function(){
            $('.js-chat').fadeIn(200);
        });
+
+       $('.js-userid').text(userId);
     });
 
 
     // Setup the socket connection
     var initSocket = function (userId) {
-        var socket = io('http://localhost:3000/');
+        socket = io('http://localhost:3000/');
 
         socket.on('connect', function () {
             // checks the token and joins the user's "room"
@@ -30,9 +33,9 @@ $(function(){
             });
         });
 
-        socket.on('receive', function (data) {
+        socket.on('receive message', function (data) {
             console.log(data);
-            uiAddMessage(data.message);
+            uiAddMessage(data.userId, data.message);
         });
 
         socket.on('userlist', function (data) {
@@ -43,8 +46,14 @@ $(function(){
 
 
 
-    var uiAddMessage = function (msg) {
-        $('.js-chat-container').append($('<div>').text(msg));
+    var uiAddMessage = function (from, msg) {
+        var name = $('<span>')
+            .attr('class', from != userId ? 'other' : 'self')
+            .text(from + ': ');
+
+        var msg = $('<span>').text(msg);
+
+        $('.js-chat-container').append($('<div>').append(name).append(msg));
     };
 
     var uiUpdateUserList = function (userlist) {
@@ -73,8 +82,14 @@ $(function(){
         $('.js-chat-controls').show();
     };
 
-    $('.js-send-message').on('click', function () {
 
+    // Pick a person
+    $('.js-userlist').on('change', function(){
+        $('.js-chat-container').text('');
+    });
+
+    // Send a message
+    $('.js-send-message').on('click', function () {
        var $message = $('.js-message'),
            messageText = $message.val();
 
@@ -85,7 +100,7 @@ $(function(){
        socket.emit('send message', {
            userId: userId,
            token: token,
-           to: 'Anna',
+           to: $('.js-userlist').val(),
            message: messageText
        });
 

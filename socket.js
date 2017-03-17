@@ -58,7 +58,7 @@ module.exports = function(io) {
 
             if (state.isOk === true) {
                 // send event to the recipient
-                socket.to(room).emit('receive message', data);
+                socket.to(data.to).emit('receive message', data);
 
                 // send event to ourself (needed to that the client can update its UI with any filtered words...)
                 socket.emit('receive message', data);
