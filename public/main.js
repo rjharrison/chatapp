@@ -1,7 +1,68 @@
 $(function(){
 
     // dirty globals. @todo refactor
-    var userId, socket, token = 'abc123';
+    var userId, socket,
+        token = 'abc123';
+
+
+    var TabNav = Backbone.View.extend({
+        tagName: 'li',
+        template: _.template('<a href="chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= userId %></a>'),
+
+        initialize: function(options) {
+            this.userId = options.userId
+        },
+
+        render: function(){
+            this.$el.html(this.template({userId: this.userId}));
+        }
+    });
+
+    var TabContent = Backbone.View.extend({
+        tagName: 'div',
+        initialize: function(options){
+            this.userId = options.userId
+        },
+
+        template: _.template('<div role="tabpanel" class="tab-pane active" id="chat-<%= userId %>"><div class="js-chat-content">hey</div></div>'),
+
+        render: function(){
+            this.$el.html(this.template({userId: this.userId}));
+        }
+    });
+
+    var ChatSection = Backbone.View.extend({
+
+        tabCount: 0,
+        userIdToTabMap: {},
+
+        openChat: function(userId) {
+
+            var tabId = this.u
+
+            var $chatTab = this.$('#chat-' + this.tabCount );
+
+            // if the chat tab doesn't exist yet, create one
+            if ($chatTab.length == 0) {
+                var opts = {userId: userId},
+                    navItem = new TabNav(opts),
+                    tabContent = new TabContent(opts);
+
+                navItem.render(opts);
+                tabContent.render(opts);
+
+                $('.js-tab-nav').append(navItem.$el);
+                $('.js-tab-content').append(tabContent.$el);
+
+                $chatTab = navItem.$el;
+            }
+        }
+    });
+
+
+    //
+    var chatSection = new ChatSection({el: '.js-chat-container'});
+
 
     $('.js-login-button').on('click', function(){
        var name = $('.js-name').val();
@@ -34,12 +95,15 @@ $(function(){
         });
 
         socket.on('receive message', function (data) {
-            console.log(data);
             uiAddMessage(data.userId, data.message);
         });
 
         socket.on('userlist', function (data) {
            uiUpdateUserList(data);
+        });
+
+        socket.on('connected', function (data) {
+           console.log(data);
         });
     }
 
@@ -70,7 +134,6 @@ $(function(){
         $('.js-userlist option').remove();
         $.each(userlist, function(k, v){
             // we don't want to chat to ourself :)
-            console.log(k, userId);
             if (k == userId) {
                 return;
             }

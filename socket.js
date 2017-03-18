@@ -1,3 +1,5 @@
+var md5 = require('crypto').createHash('md5');
+
 // Authentication/Authorization
 var auth = require('./app/auth');
 
@@ -5,6 +7,7 @@ var auth = require('./app/auth');
 // (See the loop below inside "send message" callback)
 var msgHandlers = require('./app/msghandlers').get(['badwords']);
 
+// list of users available to talk to (one global list for this demo)
 var users = {};
 
 module.exports = function(server) {
@@ -20,6 +23,7 @@ module.exports = function(server) {
             // - We use this room as a channel for any events directed at this user, allowing him to have multiple sockets attached
             // - Also allows us to send messages to a user without knowing what his socket.id's are
             if (auth.isTokenValid(data.userId, data.token)) {
+
                 socket.join(data.userId);
                 socket.userId = data.userId;
 
@@ -29,6 +33,8 @@ module.exports = function(server) {
                     socket.broadcast.emit('userlist', users);
                     socket.emit('userlist', users);
                 }
+
+                socket.emit('connected', )
             }
         });
 

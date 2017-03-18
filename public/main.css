@@ -1,7 +1,16 @@
+.container {
+    margin-top: 50px;
+    width: 600px;
+}
+
 .chat {
     display: none;
 }
 
 .userid {
     color: green;
+}
+
+.tab-pane {
+    margin: 20px 0 0 5px;
 }
