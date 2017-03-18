@@ -4,64 +4,37 @@ $(function(){
     var userId, socket,
         token = 'abc123';
 
-    var TabNav = Backbone.View.extend({
-        tagName: 'li',
-        template: _.template('<a href="chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= userId %></a>'),
-
-        initialize: function(options) {
-            this.userId = options.userId
-        },
-
-        render: function(){
-            this.$el.html(this.template({userId: this.userId}));
-        }
-    });
-
-    var TabContent = Backbone.View.extend({
-        tagName: 'div',
-        initialize: function(options){
-            this.userId = options.userId
-        },
-
-        template: _.template('<div role="tabpanel" class="tab-pane active" id="chat-<%= userId %>"><div class="js-chat-content">hey</div></div>'),
-
-        render: function(){
-            this.$el.html(this.template({userId: this.userId}));
-        }
-    });
-
     var ChatSection = Backbone.View.extend({
-
         tabCount: 0,
         userIdToTabMap: {},
 
+        // <ul> for nav, <div> for tabs
+        mainTemplate: _.template('<ul class="nav nav-tabs js-tab-nav" role="tablist"></ul><div class="tab-content js-tab-content"></div>'),
+
+        // tab header
+        navTemplate: _.template('<li><a href="chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= userId %></a></li>'),
+
+        // tab content
+        contentTemplate:  _.template('<div role="tabpanel" class="tab-pane active" id="chat-<%= userId %>"><div class="js-chat-content">hey</div></div>'),
+
+
+        render: function () {
+            this.$el.html(this.mainTemplate());
+        },
+
         openChat: function(userId) {
-
-            var tabId = this.u
-
             var $chatTab = this.$('#chat-' + this.tabCount );
 
             // if the chat tab doesn't exist yet, create one
             if ($chatTab.length == 0) {
-                var opts = {userId: userId},
-                    navItem = new TabNav(opts),
-                    tabContent = new TabContent(opts);
-
-                navItem.render(opts);
-                tabContent.render(opts);
-
-                $('.js-tab-nav').append(navItem.$el);
-                $('.js-tab-content').append(tabContent.$el);
-
-                $chatTab = navItem.$el;
+                $('.js-tab-nav').append(this.navTemplate({userId: userId}));
+                $('.js-tab-content').append(this.contentTemplate({userId: userId}));
             }
         }
     });
 
-
-    //
     var chatSection = new ChatSection({el: '.js-chat-container'});
-
+    chatSection.render();
 
     $('.js-login-button').on('click', function(){
        var name = $('.js-name').val();
@@ -70,7 +43,9 @@ $(function(){
        // connect to the chat engine
        initSocket(name);
 
-       $('.js-login').fadeOut(200);
+       $('.js-login').fadeOut(200, function () {
+           $('.js-chat').fadeIn(200);
+       });
     });
 
 
@@ -97,7 +72,6 @@ $(function(){
 
         socket.on('connected', function (data) {
             userId = data.user.userId;
-            $('.js-chat').fadeIn(200);
             $('.js-userid').text(data.user.name);
 
             uiUpdateUserList(data.users);

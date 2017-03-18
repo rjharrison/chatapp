@@ -3,6 +3,10 @@
     width: 600px;
 }
 
+.chat-container {
+    margin-top: 20px;
+}
+
 .chat {
     display: none;
 }
