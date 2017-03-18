@@ -37,17 +37,17 @@ module.exports = function(server) {
             socket.join(user.userId);
 
             // Attach the userId to the socket so that later we can determine userId from socket without storing a hash of them
-            socket.userId = data.userId;
+            socket.userId = user.userId;
+
 
             // Update the users list (and broadcast it to everyone - not suitable for production but works for this POC)
             if (!users[user.userId]) {
                 users[user.userId] = user;
                 socket.broadcast.emit('userlist', users);
-                socket.emit('userlist', users);
             }
 
-            // Let the client know we're now connected
-            socket.emit('connected', user);
+            // Let the client know we're now connected and send the users list as well.
+            socket.emit('connected', {user: user, users: users});
         });
 
         /**
@@ -89,7 +89,13 @@ module.exports = function(server) {
         socket.on('disconnect', function (data) {
             // remove the user from the list of "logged in users" this disconnect event means they have no more sessions
             io.in(socket.userId).clients(function(error, clients) {
+
+                console.log(clients.length);
+
                 if (clients.length == 0) {
+
+                    console.log(socket.userId);
+
                     if (users[socket.userId]) {
                         delete users[socket.userId];
                     }

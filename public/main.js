@@ -4,7 +4,6 @@ $(function(){
     var userId, socket,
         token = 'abc123';
 
-
     var TabNav = Backbone.View.extend({
         tagName: 'li',
         template: _.template('<a href="chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= userId %></a>'),
@@ -92,16 +91,18 @@ $(function(){
         });
 
         socket.on('userlist', function (data) {
-           uiUpdateUserList(data);
+            console.log(userId);
+            uiUpdateUserList(data);
         });
 
         socket.on('connected', function (data) {
+            userId = data.user.userId;
             $('.js-chat').fadeIn(200);
-            $('.js-userid').text(data.name);
+            $('.js-userid').text(data.user.name);
+
+            uiUpdateUserList(data.users);
         });
-    }
-
-
+    };
 
 
     var uiAddMessage = function (from, msg) {
@@ -133,7 +134,7 @@ $(function(){
             }
 
             // populate select list with people we can chat to
-            var option = $('<option>').val(k).text(k);
+            var option = $('<option>').val(k).text(v.name);
            $('.js-userlist').append(option);
         });
         $('.js-chat-controls').show();
@@ -155,9 +156,9 @@ $(function(){
        }
 
        socket.emit('send message', {
-           userId: userId,
+           fromId: userId,
+           toId: $('.js-userlist').val(),
            token: token,
-           to: $('.js-userlist').val(),
            message: messageText
        });
 
