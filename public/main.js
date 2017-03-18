@@ -68,28 +68,21 @@ $(function(){
        var name = $('.js-name').val();
        if (!name) { return; }
 
-       // in the real world we'd pickup the userId from the session/cookie/page
-       userId = name;
-
        // connect to the chat engine
        initSocket(name);
 
-       $('.js-login').fadeOut(200, function(){
-           $('.js-chat').fadeIn(200);
-       });
-
-       $('.js-userid').text(userId);
+       $('.js-login').fadeOut(200);
     });
 
 
     // Setup the socket connection
-    var initSocket = function (userId) {
+    var initSocket = function (name) {
         socket = io('http://localhost:3000/');
 
         socket.on('connect', function () {
             // checks the token and joins the user's "room"
             socket.emit('init', {
-                userId: userId,
+                name: name,
                 token: token
             });
         });
@@ -103,7 +96,8 @@ $(function(){
         });
 
         socket.on('connected', function (data) {
-           console.log(data);
+            $('.js-chat').fadeIn(200);
+            $('.js-userid').text(data.name);
         });
     }
 

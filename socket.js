@@ -1,4 +1,4 @@
-var md5 = require('crypto').createHash('md5');
+var crypto = require('crypto');
 
 // Authentication/Authorization
 var auth = require('./app/auth');
@@ -19,23 +19,35 @@ module.exports = function(server) {
          * This event is fired after the client has connected. Perform any setup here.
          */
         socket.on('init', function (data) {
-            // Is the token valid for this user? If so, add this socket to the user's "room"
+
+            // In this demo there are no persistent users. This simulates retrieving and authenticating a user
+            var user = {
+                userId: crypto.createHash('md5').update(data.name).digest('hex'),
+                name: data.name
+            };
+
+            // Authenticate
+            if (!auth.isTokenValid(user.userId, data.token)) {
+                return; // @todo throw not authorized error / event
+            }
+
+            // Add this socket to the user's "room"
             // - We use this room as a channel for any events directed at this user, allowing him to have multiple sockets attached
             // - Also allows us to send messages to a user without knowing what his socket.id's are
-            if (auth.isTokenValid(data.userId, data.token)) {
+            socket.join(user.userId);
 
-                socket.join(data.userId);
-                socket.userId = data.userId;
+            // Attach the userId to the socket so that later we can determine userId from socket without storing a hash of them
+            socket.userId = data.userId;
 
-                // update the userlist (and broadcast it to everyone - not suitable for production but works for this POC)
-                if (!users[data.userId]) {
-                    users[data.userId] = true;
-                    socket.broadcast.emit('userlist', users);
-                    socket.emit('userlist', users);
-                }
-
-                socket.emit('connected', )
+            // Update the users list (and broadcast it to everyone - not suitable for production but works for this POC)
+            if (!users[user.userId]) {
+                users[user.userId] = user;
+                socket.broadcast.emit('userlist', users);
+                socket.emit('userlist', users);
             }
+
+            // Let the client know we're now connected
+            socket.emit('connected', user);
         });
 
         /**
