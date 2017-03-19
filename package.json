@@ -4,7 +4,7 @@
   "description": "POC Chat App",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha app/**/**/**spec.js"
   },
   "author": "",
   "license": "ISC",
@@ -12,5 +12,9 @@
     "express": "^4.15.2",
     "html-entities": "^1.2.0",
     "socket.io": "^1.7.3"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0"
   }
 }
