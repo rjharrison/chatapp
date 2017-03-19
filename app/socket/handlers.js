@@ -1,13 +1,11 @@
 var crypto = require('crypto');
-var auth = require('../auth');
-
 var Entities = require('html-entities').AllHtmlEntities;
 entities = new Entities();
 
 // list of users available to talk to (one global list for this demo)
 var users = {};
 
-module.exports = function (io, socket, msgHandlers) {
+module.exports = function (io, socket, msgHandlers, auth) {
 
     return {
         init: function (data) {
