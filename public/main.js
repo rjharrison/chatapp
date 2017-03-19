@@ -275,10 +275,4 @@ $(function(){
         el: '.js-chatapp',
         socketUrl: 'http://localhost:3000'
     });
-
-
-    var uiAddMessage = function (from, msg) {
-        console.log(from, msg);
-    };
-
 });
