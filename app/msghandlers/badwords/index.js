@@ -15,7 +15,7 @@ function getBadwordsRegex() {
 
 function Badwords() {}
 
-Badwords.prototype.execute = function(data, state) {
+Badwords.prototype.execute = function(data) {
     data.message = data.message.replace(getBadwordsRegex(), '*****');
 }
 

@@ -1,17 +1,13 @@
 var crypto = require('crypto');
 var auth = require('../auth');
 
-// Load the desired message handlers (I'm using this as a hacky DI, but this could be configurable and dynamic)
-// (See the loop below inside "send message" callback)
-var msgHandlers = require('../msghandlers').get(['badwords']);
-
 var Entities = require('html-entities').AllHtmlEntities;
 entities = new Entities();
 
 // list of users available to talk to (one global list for this demo)
 var users = {};
 
-module.exports = function (io, socket) {
+module.exports = function (io, socket, msgHandlers) {
 
     return {
         init: function (data) {
@@ -48,10 +44,6 @@ module.exports = function (io, socket) {
 
 
         sendMessage: function (data) {
-            var state = {
-                isOk : true
-            }
-
             // check if we're authenticated and authorized to send this message
             if (!(auth.isTokenValid(data.fromId, data.token) && auth.canSendMessage(data.fromId, data.toId))) {
                 return; // ... @todo trigger an error
@@ -65,7 +57,7 @@ module.exports = function (io, socket) {
              * load intensive by dumping the request into a message queue and have workers pick it up outside of the chat engine
              */
             msgHandlers.forEach(function(handler){
-                handler.execute(data, state);
+                handler.execute(data);
             });
 
             // send more information about the recipient to the client (i.e. we need at least their name/id)
@@ -75,25 +67,17 @@ module.exports = function (io, socket) {
             // escape HTML/XSS protection
             data.message = entities.encode(data.message);
 
+            // send event to the recipient
+            socket.to(data.toId).emit('receive message', data);
 
-            if (state.isOk === true) {
-                // send event to the recipient
-                socket.to(data.toId).emit('receive message', data);
-
-                // send event to ourself (need to do that so the client can update its UI with any filtered content...)
-                socket.emit('receive message', data);
-            } else {
-                // @todo trigger an error
-            }
+            // send event to ourself (need to do that so the client can update its UI with any filtered content...)
+            socket.emit('receive message', data);
         },
 
 
         disconnect: function (data) {
             // remove the user from the list of "logged in users" this disconnect event means they have no more sessions
             io.in(socket.userId).clients(function (error, clients) {
-
-                console.log(clients.length);
-
                 if (clients.length == 0) {
                     if (users[socket.userId]) {
                         delete users[socket.userId];

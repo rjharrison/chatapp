@@ -28,7 +28,6 @@ describe('Socket Handlers', function () {
             };
         });
 
-
         it('Should join a channel represented by the MD5 has of the name', function () {
             mockSocket.join = sinon.stub();
 
@@ -59,6 +58,69 @@ describe('Socket Handlers', function () {
             handlers({}, mockSocket).init(data);
             expect(mockSocket.emit.calledOnce).to.be.true;
             expect(mockSocket.emit.calledWith('connected', sinon.match.object, sinon.match.object));
+        });
+    });
+
+
+    describe('send message', function () {
+        var handlers, mockSocket, data
+
+        beforeEach(function (){
+            // clean module state
+            delete require.cache[require.resolve('./handlers')];
+            handlers = require('./handlers');
+
+            // define a noop mock object
+            mockSocket = {
+                join: function () {},
+                broadcast: { emit: function () {}},
+                emit: function () {},
+                to: function () { return {emit: function(){}} }
+            };
+
+            data = {
+                toId: "a",
+                fromId: "b",
+                message: '',
+                token: 'abc123',
+            };
+
+        })
+
+        it('Should iterate over the message handlers and call .execute() on each one', function () {
+            var stub = {execute: sinon.stub()},
+                msgHandlers = [stub, stub];
+
+            handlers({}, mockSocket, msgHandlers).sendMessage(data)
+            expect(stub.execute.calledTwice).to.be.true;
+        });
+
+        it('Should encode html entities', function () {
+            data.message = '<script>';
+            handlers({}, mockSocket, []).sendMessage(data);
+
+            expect(data.message).to.be.equal('&lt;script&gt;');
+        });
+
+        it('Should emit a "receive message" to both the sender and recipient', function () {
+            var emit = sinon.stub(),
+                to = sinon.stub().returns({emit: emit});
+
+            mockSocket.to = to;
+            mockSocket.emit = sinon.stub();
+
+            handlers({}, mockSocket, []).sendMessage(data);
+
+            // recipient
+            expect(to.calledOnce).to.be.true;
+            expect(to.calledWith(data.toId)).to.be.true;
+            expect(emit.calledOnce).to.be.true;
+            expect(emit.calledWith('receive message', data)).to.be.true;
+
+            // sender
+            expect(mockSocket.emit.calledOnce).to.be.true;
+            expect(mockSocket.emit.calledWith('receive message', data)).to.be.true;
+
         });
     });
 });
