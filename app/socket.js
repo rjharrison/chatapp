@@ -4,11 +4,11 @@ var Entities = require('html-entities').AllHtmlEntities;
 entities = new Entities();
 
 // Authentication/Authorization
-var auth = require('./app/auth');
+var auth = require('./auth/index');
 
 // Load the desired message handlers (I'm using this as a hacky DI, but this could be configurable and dynamic)
 // (See the loop below inside "send message" callback)
-var msgHandlers = require('./app/msghandlers').get(['badwords']);
+var msgHandlers = require('./msghandlers/index').get(['badwords']);
 
 // list of users available to talk to (one global list for this demo)
 var users = {};

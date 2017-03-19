@@ -9,7 +9,7 @@ server.listen(port, function () {
 });
 
 // sets up the socket.io listeners
-require('./socket')(server);
+require('./app/socket')(server);
 
 // Routing
 app.use(express.static(__dirname + '/public'));
