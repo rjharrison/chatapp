@@ -11,6 +11,6 @@ requirejs(['chat/ChatApp'], function(ChatApp) {
         el: '.js-chatapp',
         socketUrl: 'http://localhost:3000'
     })
-    
+
 });
 

@@ -1,5 +1,8 @@
 var crypto = require('crypto');
 
+var Entities = require('html-entities').AllHtmlEntities;
+entities = new Entities();
+
 // Authentication/Authorization
 var auth = require('./app/auth');
 
@@ -77,6 +80,10 @@ module.exports = function(server) {
             // send more information about the recipient to the client (i.e. we need at least their name/id)
             data.toUser = users[data.toId];
             data.fromUser = users[data.fromId];
+
+            // escape HTML/XSS protection
+            data.message = entities.encode(data.message);
+
 
             if (state.isOk === true) {
                 // send event to the recipient
