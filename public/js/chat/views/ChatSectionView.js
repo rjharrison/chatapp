@@ -20,7 +20,17 @@ define(function(){
         messageTemplate: _.template('<div class="message <%= msgClass %>"><span class="name"><%= fromName %>:</span> <%= message %> </div>'),
 
         events: {
-            'click .js-chat-send': 'sendMessage'
+            'click .js-chat-send': 'sendMessage',
+            'focus .js-chat-message': function () {
+                $(document).on('keypress', function (e) {
+                    if (e.which == 13) { // enter key
+                        this.sendMessage();
+                    }
+                }.bind(this));
+            },
+            'blur .js-chat-message': function () {
+                $(document).unbind('keypress');
+            }
         },
 
         initialize: function (options) {
