@@ -4,6 +4,27 @@ $(function(){
     var userId, socket,
         token = 'abc123';
 
+
+    var UserList = Backbone.View.extend({
+        selectTemplate: _.template('<% if (!hasUsers) { %>You have no friends online. Perhaps someone else will login soon...<% } else { %><select class="userlist"></select><% } %>'),
+        optionTemplate: _.template('<option value=<%= userId %>><%= name %></option>'),
+
+        render: function (users) {
+            // replaces list with empty select
+            this.$el.html(this.selectTemplate({hasUsers: Object.keys(users).length >1 }));
+
+            // Update the select list
+            var view = this;
+            $.each(users, function(k, v){
+                // we don't want to chat to ourself :)
+                if (k == userId) { return; }
+                view.$('select').append(view.optionTemplate(v));
+            });
+            $('.js-chat-controls').show();
+        }
+    });
+
+
     var ChatSection = Backbone.View.extend({
         tabCount: 0,
         userIdToTabMap: {},
@@ -33,8 +54,15 @@ $(function(){
         }
     });
 
-    var chatSection = new ChatSection({el: '.js-chat-container'});
-    chatSection.render();
+    var ChatApp = Backbone.View.extend({
+        initialize: function () {
+            this.userList = new UserList({el: '.js-userlist'});
+            this.chatSection = new ChatSection({el: '.js-chat-container'});
+        }
+    });
+    var C = new ChatApp();
+
+
 
     $('.js-login-button').on('click', function(){
        var name = $('.js-name').val();
@@ -66,15 +94,14 @@ $(function(){
         });
 
         socket.on('userlist', function (data) {
-            console.log(userId);
-            uiUpdateUserList(data);
+            C.userList.render(data);
         });
 
         socket.on('connected', function (data) {
             userId = data.user.userId;
             $('.js-userid').text(data.user.name);
 
-            uiUpdateUserList(data.users);
+            C.userList.render(data.users);
         });
     };
 
