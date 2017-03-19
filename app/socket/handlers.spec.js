@@ -4,6 +4,23 @@ var expect = require('chai').expect,
 
 describe('Socket Handlers', function () {
 
+    var mockSocket = {},
+        handlers = function(){};
+
+    beforeEach(function(){
+        // define a no-op mock object
+        mockSocket = {
+            join: function (){},
+            broadcast: { emit: function (){}},
+            emit: function (){},
+            to: function () { return {emit: function(){}} }
+        };
+
+        // force a new require (need to reset the "users" variable within the module)
+        delete require.cache[require.resolve('./handlers')];
+        handlers = require('./handlers');
+    });
+
     describe('init', function () {
 
         var data = {
@@ -12,21 +29,6 @@ describe('Socket Handlers', function () {
         };
 
         var richardMD5 = 'c51c8bbd9e8c8bc49042ccd5d3e9864d';
-        var mockSocket;
-        var handlers;
-
-        beforeEach(function(){
-            // force a new require (need to reset the "users" variable within the module)
-            delete require.cache[require.resolve('./handlers')];
-            handlers = require('./handlers');
-
-            // define a noop mock object
-            mockSocket = {
-                join: function (){},
-                broadcast: { emit: function (){}},
-                emit: function (){}
-            };
-        });
 
         it('Should join a channel represented by the MD5 has of the name', function () {
             mockSocket.join = sinon.stub();
@@ -63,29 +65,16 @@ describe('Socket Handlers', function () {
 
 
     describe('send message', function () {
-        var handlers, mockSocket, data
+        var data;
 
         beforeEach(function (){
-            // clean module state
-            delete require.cache[require.resolve('./handlers')];
-            handlers = require('./handlers');
-
-            // define a noop mock object
-            mockSocket = {
-                join: function () {},
-                broadcast: { emit: function () {}},
-                emit: function () {},
-                to: function () { return {emit: function(){}} }
-            };
-
             data = {
                 toId: "a",
                 fromId: "b",
                 message: '',
                 token: 'abc123',
             };
-
-        })
+        });
 
         it('Should iterate over the message handlers and call .execute() on each one', function () {
             var stub = {execute: sinon.stub()},
@@ -121,6 +110,39 @@ describe('Socket Handlers', function () {
             expect(mockSocket.emit.calledOnce).to.be.true;
             expect(mockSocket.emit.calledWith('receive message', data)).to.be.true;
 
+        });
+    });
+
+
+    describe('disconnect', function () {
+
+        it('Should emit a "userlist" event if this socket means the user has effectively "logged off" (ie no more sockets)', function () {
+            var clients = sinon.stub().callsArgWith(0, undefined, [])
+                io = {in: sinon.stub().returns({clients: clients})};
+
+            mockSocket.emit = sinon.stub();
+            mockSocket.broadcast = {emit: sinon.stub()}
+
+            handlers(io, mockSocket, []).disconnect();
+
+            expect(io.in.calledOnce).to.be.true;
+
+            // emit to client
+            expect(mockSocket.emit.calledOnce).to.be.true;
+            expect(mockSocket.emit.calledWith('userlist')).to.be.true;
+
+            // broadcast to everyone else
+            expect(mockSocket.broadcast.emit.calledOnce).to.be.true;
+            expect(mockSocket.broadcast.emit.calledWith('userlist'));
+        });
+
+        it('Should not emit a "userlist" event if there are other active sockets for this user', function () {
+            var clients = sinon.stub().callsArgWith(0, undefined, ["non-empty array"]),
+            io = {in: sinon.stub().returns({clients: clients})};
+
+            mockSocket.emit = sinon.spy();
+
+            expect(mockSocket.emit.notCalled).to.be.true;
         });
     });
 });

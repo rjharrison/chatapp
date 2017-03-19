@@ -75,7 +75,7 @@ module.exports = function (io, socket, msgHandlers) {
         },
 
 
-        disconnect: function (data) {
+        disconnect: function () {
             // remove the user from the list of "logged in users" this disconnect event means they have no more sessions
             io.in(socket.userId).clients(function (error, clients) {
                 if (clients.length == 0) {
