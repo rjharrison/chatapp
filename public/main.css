@@ -3,12 +3,13 @@
     width: 600px;
 }
 
-.chat-container {
-    margin-top: 20px;
+option {
+    width: 100px;
 }
 
-.chat {
-    display: none;
+
+.chat-tabs {
+    margin-top: 20px;
 }
 
 .userid {
@@ -17,4 +18,10 @@
 
 .tab-pane {
     margin: 20px 0 0 5px;
+    height: 100px;
+    overflow: auto;
+}
+
+.chat-input {
+    margin-top: 30px;
 }

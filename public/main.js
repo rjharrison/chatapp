@@ -1,7 +1,7 @@
 $(function(){
 
     // dirty globals. @todo refactor
-    var userId, socket;
+    var userId;
 
 
     var LoginView = Backbone.View.extend({
@@ -18,7 +18,7 @@ $(function(){
         ),
 
         // displayed after login
-        helloTemplate: _.template('<h2>Hi <span class="userid"><%= name %></span>! Pick someone to chat with...</h2>'),
+        helloTemplate: _.template('<h2>Hi <span class="userid"><%= name %></span>! Pick someone to chat with.</h2>'),
 
         render: function () {
             this.$el.html(this.loginTemplate());
@@ -44,8 +44,17 @@ $(function(){
     });
 
     var UserList = Backbone.View.extend({
-        selectTemplate: _.template('<% if (!hasUsers) { %>You have no friends online. Perhaps someone else will login soon?<% } else { %><select class="userlist"></select><% } %>'),
+        selectTemplate: _.template('<% if (!hasUsers) { %>You have no friends online. Perhaps someone else will login soon?<% } else { %><select class="userlist"><option/></select><% } %>'),
         optionTemplate: _.template('<option value=<%= userId %>><%= name %></option>'),
+
+        events: {
+            'change select': 'userSelected'
+        },
+
+        initialize: function (options) {
+            // we pass the "logged in user" object from the parent view into the child
+            this.user = options.user;
+        },
 
         render: function (users) {
             // replaces list with empty select
@@ -55,52 +64,75 @@ $(function(){
             var view = this;
             $.each(users, function(k, v){
                 // we don't want to chat to ourself :)
-                if (k == userId) { return; }
+                if (k == view.user.userId) { return; }
                 view.$('select').append(view.optionTemplate(v));
             });
             $('.js-chat-controls').show();
+        },
+
+        userSelected: function () {
+            var userId = this.$('option:selected').val(),
+                name = this.$('option:selected').text();
+
+            this.trigger('user-selected', userId, name);
         }
     });
 
 
     var ChatSection = Backbone.View.extend({
-        tabCount: 0,
-        userIdToTabMap: {},
+        rendered: false,
 
         // <ul> for nav, <div> for tabs
-        mainTemplate: _.template('<ul class="nav nav-tabs js-tab-nav" role="tablist"></ul><div class="tab-content js-tab-content"></div>'),
+        mainTemplate: _.template(
+            '<ul class="nav nav-tabs js-tab-nav" role="tablist"></ul><div class="tab-content js-tab-content"></div>' +
+            '<div class="js-chat-inout chat-input"><input width="" class="js-chat-text" /><input type="button" class="btn btn-primary" value="Send"/> </div>'
+        ),
 
         // tab header
-        navTemplate: _.template('<li><a href="chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= userId %></a></li>'),
+        navTemplate: _.template('<li role="presentation"><a href="#chat-<%= userId %>" aria-controls="home" role="tab" data-toggle="tab"><%= name %></a></li>'),
 
         // tab content
-        contentTemplate:  _.template('<div role="tabpanel" class="tab-pane active" id="chat-<%= userId %>"><div class="js-chat-content">hey</div></div>'),
+        contentTemplate:  _.template('<div role="tabpanel" class="tab-pane" id="chat-<%= userId %>"><div class="js-chat-content"></div></div>'),
 
 
         render: function () {
+            this.rendered = true;
             this.$el.html(this.mainTemplate());
         },
 
-        openChat: function(userId) {
-            var $chatTab = this.$('#chat-' + this.tabCount );
+        openChat: function(userId, name) {
+
+            if (!this.rendered) {
+                this.render();
+            }
+
+            var $chatTab = this.$('#chat-' + userId);
 
             // if the chat tab doesn't exist yet, create one
             if ($chatTab.length == 0) {
-                $('.js-tab-nav').append(this.navTemplate({userId: userId}));
+                $('.js-tab-nav').append(this.navTemplate({userId: userId, name: name}));
                 $('.js-tab-content').append(this.contentTemplate({userId: userId}));
             }
+
+            this.$('a[href="#chat-' + userId + '"]').tab('show');
         }
     });
 
     var ChatApp = Backbone.View.extend({
+
+        // The "logged in user"
+        // - properties are populated during the login flow
+        user: {},
+
         initialize: function (options) {
             this.options = options;
-
             this.setupViews();
 
             // setup the socket on successful "login"
             this.listenTo(this.loginView, 'login-success', function (name, token) {
-                this.initSocket(name, token);
+                this.user.name = name;
+                this.user.tocken = token;
+                this.initSocket(this.user);
             }.bind(this));
 
             this.loginView.render();
@@ -108,19 +140,27 @@ $(function(){
 
         setupViews: function () {
             this.loginView = new LoginView({el: '.js-login'});
-            this.userList = new UserList({el: '.js-userlist'});
-            this.chatSection = new ChatSection({el: '.js-chat-container'});
+            this.userList = new UserList({el: '.js-userlist', user: this.user});
+            this.chatSection = new ChatSection({el: '.js-chat-tabs'});
+
+
+            this.chatSection.listenTo(this.userList, 'user-selected', function(userId, name){
+                this.openChat(userId, name);
+            })
+
         },
 
-        initSocket: function (name, token) {
+        initSocket: function (user) {
             var view = this,
                 socket = this.socket = io(this.options.socketUrl);
 
             socket.on('connect', function () {
-                // checks the token and joins the user's "room"
+                // This is a part of my user/login spoofing. Send the name selected to the server, which returns the "userId"
+                // via the "connected" event. In the real world this would still be needed in some form to associate the socket.io "socket.id" with
+                // the logged in user's ID.
                 socket.emit('init', {
-                    name: name,
-                    token: token
+                    name: user.name,
+                    token: user.token
                 });
             });
 
@@ -128,14 +168,14 @@ $(function(){
                 uiAddMessage(data.userId, data.message);
             });
 
+            // Event handler for refreshing userlist
             socket.on('userlist', function (data) {
-                console.log('userlist', data);
                 view.userList.render(data);
             });
 
+            // When the user has connected refresh the userlist
             socket.on('connected', function (data) {
-                console.log('connected', data);
-                userId = data.user.userId;
+                view.user.userId = data.user.userId;
                 view.userList.render(data.users);
             });
         }
