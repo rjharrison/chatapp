@@ -40,7 +40,7 @@ define([
             // setup the socket.io socket on successful "login"
             this.listenTo(this.loginView, 'login-success', function (name, token) {
                 this.user.name = name;
-                this.user.tocken = token;
+                this.user.token = token;
                 this.initSocket(this.user);
             }.bind(this));
 
@@ -63,6 +63,7 @@ define([
         initSocket: function (user) {
             var view = this,
                 socket = this.socket = io(this.options.socketUrl);
+
 
             socket.on('connect', function () {
                 // This is a part of my user/login spoofing. Send the name selected to the server, which returns the "userId"

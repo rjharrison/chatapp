@@ -35,7 +35,6 @@ module.exports = function (io, socket, msgHandlers, auth) {
                 socket.broadcast.emit('userlist', users);
             }
 
-
             // Let the client know we're now connected and send the users list as well.
             socket.emit('connected', {user: user, users: users});
         },

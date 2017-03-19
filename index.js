@@ -14,8 +14,8 @@ var setupHandlers = require('./app/socket/handlers');
 
 // Load the desired message handlers (I'm using this as a hacky DI, but this could be configurable and dynamic)
 // (See the loop inside "send message" callback)
-var msgHandlers = require('../msghandlers').get(['badwords']);
-var auth = require('../auth');
+var msgHandlers = require('./app/msghandlers').get(['badwords']);
+var auth = require('./app/auth');
 
 io.on('connection', function(socket){
     var handlers = setupHandlers(io, socket, msgHandlers, auth);

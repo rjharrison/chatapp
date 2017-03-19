@@ -5,6 +5,7 @@ var expect = require('chai').expect,
 describe('Socket Handlers', function () {
 
     var mockSocket = {},
+        mockAuth = {},
         handlers = function(){};
 
     beforeEach(function(){
@@ -14,6 +15,11 @@ describe('Socket Handlers', function () {
             broadcast: { emit: function (){}},
             emit: function (){},
             to: function () { return {emit: function(){}} }
+        };
+
+        mockAuth = {
+            isTokenValid: function () { return true; },
+            canSendMessage: function () { return true; }
         };
 
         // force a new require (need to reset the "users" variable within the module)
@@ -33,7 +39,7 @@ describe('Socket Handlers', function () {
         it('Should join a channel represented by the MD5 has of the name', function () {
             mockSocket.join = sinon.stub();
 
-            handlers({}, mockSocket).init(data);
+            handlers({}, mockSocket, [], mockAuth).init(data);
             expect(mockSocket.join.called).to.be.true;
             expect(mockSocket.join.calledWith(richardMD5));
             expect(mockSocket.userId).to.be.equal(richardMD5);
@@ -44,7 +50,7 @@ describe('Socket Handlers', function () {
 
             // call init twice for the same "data" (i.e. user connects to two sockets)
             // the broadcast.emit should only be called once (the first time)
-            var x = handlers({}, mockSocket);
+            var x = handlers({}, mockSocket, [], mockAuth);
             x.init(data);
             expect(mockSocket.broadcast.emit.calledOnce).to.be.true;
             x.init(data);
@@ -57,7 +63,7 @@ describe('Socket Handlers', function () {
         it('Should emit a "connected" event', function () {
             mockSocket.emit = sinon.stub();
 
-            handlers({}, mockSocket).init(data);
+            handlers({}, mockSocket, [], mockAuth).init(data);
             expect(mockSocket.emit.calledOnce).to.be.true;
             expect(mockSocket.emit.calledWith('connected', sinon.match.object, sinon.match.object));
         });
@@ -80,13 +86,13 @@ describe('Socket Handlers', function () {
             var stub = {execute: sinon.stub()},
                 msgHandlers = [stub, stub];
 
-            handlers({}, mockSocket, msgHandlers).sendMessage(data)
+            handlers({}, mockSocket, msgHandlers, mockAuth).sendMessage(data)
             expect(stub.execute.calledTwice).to.be.true;
         });
 
         it('Should encode html entities', function () {
             data.message = '<script>';
-            handlers({}, mockSocket, []).sendMessage(data);
+            handlers({}, mockSocket, [], mockAuth).sendMessage(data);
 
             expect(data.message).to.be.equal('&lt;script&gt;');
         });
@@ -98,7 +104,7 @@ describe('Socket Handlers', function () {
             mockSocket.to = to;
             mockSocket.emit = sinon.stub();
 
-            handlers({}, mockSocket, []).sendMessage(data);
+            handlers({}, mockSocket, [], mockAuth).sendMessage(data);
 
             // recipient
             expect(to.calledOnce).to.be.true;
