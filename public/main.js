@@ -1,12 +1,50 @@
 $(function(){
 
     // dirty globals. @todo refactor
-    var userId, socket,
-        token = 'abc123';
+    var userId, socket;
 
+
+    var LoginView = Backbone.View.extend({
+
+        events: {
+            'click .js-login-button' : 'doLogin'
+        },
+
+        // main "login" box
+        loginTemplate: _.template(
+            '<h2>Hello, what is your name?</h2>' +
+            '<input class="js-name" type="text" width="100"/>' +
+            '<input class="btn btn-success js-login-button" type="button" value="Login">'
+        ),
+
+        // displayed after login
+        helloTemplate: _.template('<h2>Hi <span class="userid"><%= name %></span>! Pick someone to chat with...</h2>'),
+
+        render: function () {
+            this.$el.html(this.loginTemplate());
+        },
+
+        // handles the login button click
+        doLogin: function () {
+            var view = this,
+                name = view.$('.js-name').val();
+
+            if (!name) { return; }
+
+            // trigger an event on this view, which the parent will pick up
+            // (I'm mostly using this "login" concept as a way to present this demo. In the real world I'd expect an already authenticated user with
+            // userIds and tokens etc already generated and available to my UI)
+            var token = 'abc123';
+            view.trigger('login-success', name, token);
+
+            view.$el.fadeOut(200, function () {
+                view.$el.html(view.helloTemplate({name: name})).fadeIn(200);
+            });
+        }
+    });
 
     var UserList = Backbone.View.extend({
-        selectTemplate: _.template('<% if (!hasUsers) { %>You have no friends online. Perhaps someone else will login soon...<% } else { %><select class="userlist"></select><% } %>'),
+        selectTemplate: _.template('<% if (!hasUsers) { %>You have no friends online. Perhaps someone else will login soon?<% } else { %><select class="userlist"></select><% } %>'),
         optionTemplate: _.template('<option value=<%= userId %>><%= name %></option>'),
 
         render: function (users) {
@@ -55,55 +93,59 @@ $(function(){
     });
 
     var ChatApp = Backbone.View.extend({
-        initialize: function () {
+        initialize: function (options) {
+            this.options = options;
+
+            this.setupViews();
+
+            // setup the socket on successful "login"
+            this.listenTo(this.loginView, 'login-success', function (name, token) {
+                this.initSocket(name, token);
+            }.bind(this));
+
+            this.loginView.render();
+        },
+
+        setupViews: function () {
+            this.loginView = new LoginView({el: '.js-login'});
             this.userList = new UserList({el: '.js-userlist'});
             this.chatSection = new ChatSection({el: '.js-chat-container'});
+        },
+
+        initSocket: function (name, token) {
+            var view = this,
+                socket = this.socket = io(this.options.socketUrl);
+
+            socket.on('connect', function () {
+                // checks the token and joins the user's "room"
+                socket.emit('init', {
+                    name: name,
+                    token: token
+                });
+            });
+
+            socket.on('receive message', function (data) {
+                uiAddMessage(data.userId, data.message);
+            });
+
+            socket.on('userlist', function (data) {
+                console.log('userlist', data);
+                view.userList.render(data);
+            });
+
+            socket.on('connected', function (data) {
+                console.log('connected', data);
+                userId = data.user.userId;
+                view.userList.render(data.users);
+            });
         }
     });
-    var C = new ChatApp();
 
-
-
-    $('.js-login-button').on('click', function(){
-       var name = $('.js-name').val();
-       if (!name) { return; }
-
-       // connect to the chat engine
-       initSocket(name);
-
-       $('.js-login').fadeOut(200, function () {
-           $('.js-chat').fadeIn(200);
-       });
+    var C = new ChatApp({
+        socketUrl: 'http://localhost:3000'
     });
 
 
-    // Setup the socket connection
-    var initSocket = function (name) {
-        socket = io('http://localhost:3000/');
-
-        socket.on('connect', function () {
-            // checks the token and joins the user's "room"
-            socket.emit('init', {
-                name: name,
-                token: token
-            });
-        });
-
-        socket.on('receive message', function (data) {
-            uiAddMessage(data.userId, data.message);
-        });
-
-        socket.on('userlist', function (data) {
-            C.userList.render(data);
-        });
-
-        socket.on('connected', function (data) {
-            userId = data.user.userId;
-            $('.js-userid').text(data.user.name);
-
-            C.userList.render(data.users);
-        });
-    };
 
 
     var uiAddMessage = function (from, msg) {
@@ -115,32 +157,6 @@ $(function(){
 
         $('.js-chat-container').append($('<div>').append(name).append(msg));
     };
-
-    var uiUpdateUserList = function (userlist) {
-
-        // no users (we will always be in the list, hence == 1)
-        if (Object.keys(userlist).length == 1) {
-            $('.js-sadtimes').show();
-            $('.js-chat-controls').hide();
-            return;
-        }
-
-        // some users to chat to!
-        $('.js-sadtimes').hide();
-        $('.js-userlist option').remove();
-        $.each(userlist, function(k, v){
-            // we don't want to chat to ourself :)
-            if (k == userId) {
-                return;
-            }
-
-            // populate select list with people we can chat to
-            var option = $('<option>').val(k).text(v.name);
-           $('.js-userlist').append(option);
-        });
-        $('.js-chat-controls').show();
-    };
-
 
     // Pick a person
     $('.js-userlist').on('change', function(){
@@ -155,14 +171,14 @@ $(function(){
        if (!messageText) {
            return;
        }
-
+/*
        socket.emit('send message', {
            fromId: userId,
            toId: $('.js-userlist').val(),
            token: token,
            message: messageText
        });
-
+*/
        $message.val('');
     });
 
