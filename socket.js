@@ -59,7 +59,7 @@ module.exports = function(server) {
             }
 
             // check if we're authenticated and authorized to send this message
-            if (!(auth.isTokenValid(data.userId, data.token) && auth.canSendMessage(data.userId, data.to))) {
+            if (!(auth.isTokenValid(data.fromId, data.token) && auth.canSendMessage(data.fromId, data.toId))) {
                 return; // ... @todo trigger an error
             }
 
@@ -74,12 +74,15 @@ module.exports = function(server) {
                 handler.execute(data, state);
             });
 
+            // send more information about the recipient to the client (i.e. we need at least their name/id)
+            data.toUser = users[data.toId];
+            data.fromUser = users[data.fromId];
 
             if (state.isOk === true) {
                 // send event to the recipient
-                socket.to(data.to).emit('receive message', data);
+                socket.to(data.toId).emit('receive message', data);
 
-                // send event to ourself (needed to that the client can update its UI with any filtered words...)
+                // send event to ourself (need to do that so the client can update its UI with any filtered content...)
                 socket.emit('receive message', data);
             } else {
                 // @todo trigger an error
