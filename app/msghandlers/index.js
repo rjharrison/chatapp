@@ -1,9 +1,7 @@
 /**
  * Message Handler factory.
- * Probably replace this with a nicer DI library!
+ * Probably replace this with a nicer DI library
  */
-
-
 var validHandlers = ['badwords'];
 
 function Handlers() {}
