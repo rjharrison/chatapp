@@ -25,3 +25,10 @@ option {
 .chat-input {
     margin-top: 30px;
 }
+
+.message .name {
+    font-weight: bold;
+}
+.message.self .name {
+    color: green;
+}
