@@ -31,6 +31,6 @@ describe('Badwords filter', function () {
     it('Should be case insensitive', function () {
         expect(execute(knownBadwords[0].toUpperCase())).to.be.equal(expectedReplacement);
     });
-    
+
 });
 

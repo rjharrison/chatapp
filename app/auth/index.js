@@ -2,8 +2,8 @@
  * Check whether the authentication token is valid for the given userId
  */
 exports.isTokenValid = function (userId, token) {
-    return true;
-}
+    return token == 'abc123';
+};
 
 /**
  * Check whether the recipient/sender know each other, are not on a blocked list, have enough credits, etc.
@@ -14,4 +14,4 @@ exports.canSendMessage = function (from, to) {
     } else {
         return true;
     }
-}
+};

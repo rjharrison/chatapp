@@ -4,7 +4,7 @@
   "description": "POC Chat App",
   "main": "index.js",
   "scripts": {
-    "test": "mocha app/**/**/**spec.js"
+    "test": "mocha --recursive app/"
   },
   "author": "",
   "license": "ISC",
