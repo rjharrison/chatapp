@@ -35,12 +35,12 @@ module.exports = function (io, socket) {
             // Attach the userId to the socket so that later we can determine userId from socket without storing a hash of them
             socket.userId = user.userId;
 
-
             // Update the users list (and broadcast it to everyone - not suitable for production but works for this POC)
             if (!users[user.userId]) {
                 users[user.userId] = user;
                 socket.broadcast.emit('userlist', users);
             }
+
 
             // Let the client know we're now connected and send the users list as well.
             socket.emit('connected', {user: user, users: users});
