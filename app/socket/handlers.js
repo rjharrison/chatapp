@@ -1,27 +1,20 @@
 var crypto = require('crypto');
+var auth = require('../auth');
+
+// Load the desired message handlers (I'm using this as a hacky DI, but this could be configurable and dynamic)
+// (See the loop below inside "send message" callback)
+var msgHandlers = require('../msghandlers').get(['badwords']);
 
 var Entities = require('html-entities').AllHtmlEntities;
 entities = new Entities();
 
-// Authentication/Authorization
-var auth = require('./auth/index');
-
-// Load the desired message handlers (I'm using this as a hacky DI, but this could be configurable and dynamic)
-// (See the loop below inside "send message" callback)
-var msgHandlers = require('./msghandlers/index').get(['badwords']);
-
 // list of users available to talk to (one global list for this demo)
 var users = {};
 
-module.exports = function(server) {
-    var io = require('socket.io')(server);
+module.exports = function (io, socket) {
 
-    io.on('connection', function(socket){
-
-        /**
-         * This event is fired after the client has connected. Perform any setup here.
-         */
-        socket.on('init', function (data) {
+    return {
+        init: function (data) {
 
             // In this demo there are no persistent users. This simulates retrieving and authenticating a user
             var user = {
@@ -51,12 +44,10 @@ module.exports = function(server) {
 
             // Let the client know we're now connected and send the users list as well.
             socket.emit('connected', {user: user, users: users});
-        });
+        },
 
-        /**
-         * This is fired after client sends a message
-         */
-        socket.on('send message', function (data) {
+
+        sendMessage: function (data) {
             var state = {
                 isOk : true
             }
@@ -94,18 +85,16 @@ module.exports = function(server) {
             } else {
                 // @todo trigger an error
             }
-        });
+        },
 
-        socket.on('disconnect', function (data) {
+
+        disconnect: function (data) {
             // remove the user from the list of "logged in users" this disconnect event means they have no more sessions
-            io.in(socket.userId).clients(function(error, clients) {
+            io.in(socket.userId).clients(function (error, clients) {
 
                 console.log(clients.length);
 
                 if (clients.length == 0) {
-
-                    console.log(socket.userId);
-
                     if (users[socket.userId]) {
                         delete users[socket.userId];
                     }
@@ -113,7 +102,6 @@ module.exports = function(server) {
                     socket.emit('userlist', users);
                 }
             });
-
-        })
-    });
-}
+        }
+    }
+};

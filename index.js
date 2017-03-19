@@ -8,8 +8,17 @@ server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
 
-// sets up the socket.io listeners
-require('./app/socket')(server);
+// Setup socket.io handlers
+var io = require('socket.io')(server);
+var setupHandlers = require('./app/socket/handlers');
+
+io.on('connection', function(socket){
+    var handlers = setupHandlers(io, socket);
+    socket.on('init', handlers.init);
+    socket.on('send message', handlers.sendMessage);
+    socket.on('disconnect', handlers.disconnect);
+});
+
 
 // Routing
 app.use(express.static(__dirname + '/public'));
