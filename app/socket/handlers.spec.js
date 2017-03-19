@@ -6,7 +6,8 @@ describe('Socket Handlers', function () {
 
     var mockSocket = {},
         mockAuth = {},
-        handlers = function(){};
+        handlers = function(){},
+        richardMD5 = 'c51c8bbd9e8c8bc49042ccd5d3e9864d';
 
     beforeEach(function(){
         // define a no-op mock object
@@ -34,7 +35,11 @@ describe('Socket Handlers', function () {
             token: 'abc123'
         };
 
-        var richardMD5 = 'c51c8bbd9e8c8bc49042ccd5d3e9864d';
+        it('Should called isTokenValid() to authenticate', function () {
+            mockAuth.isTokenValid = sinon.stub();
+            handlers({}, mockSocket, [], mockAuth).init(data);
+            expect(mockAuth.isTokenValid.calledWith(richardMD5, data.token)).to.be.true;
+        });
 
         it('Should join a channel represented by the MD5 has of the name', function () {
             mockSocket.join = sinon.stub();
@@ -80,6 +85,15 @@ describe('Socket Handlers', function () {
                 message: '',
                 token: 'abc123',
             };
+        });
+
+        it('Should call auth functions', function () {
+            mockAuth.isTokenValid = sinon.stub().returns(true);
+            mockAuth.canSendMessage = sinon.stub();
+
+            handlers({}, mockSocket, [], mockAuth).sendMessage(data);
+            expect(mockAuth.isTokenValid.calledWith(data.fromId, data.token)).to.be.true;
+            expect(mockAuth.canSendMessage.calledWith(data.fromId, data.toId)).to.be.true;
         });
 
         it('Should iterate over the message handlers and call .execute() on each one', function () {
