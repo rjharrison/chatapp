@@ -63,7 +63,7 @@ module.exports = function (io, socket, msgHandlers, auth) {
 
             // escape HTML/XSS protection
             data.message = entities.encode(data.message);
-
+            
             // send event to the recipient
             socket.to(data.toId).emit('receive message', data);
 

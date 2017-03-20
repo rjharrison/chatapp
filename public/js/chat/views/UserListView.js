@@ -30,7 +30,9 @@ define(function () {
             var userId = this.$('option:selected').val(),
                 name = this.$('option:selected').text();
 
-            this.trigger('user-selected', userId, name);
+            if (userId) {
+                this.trigger('user-selected', userId, name);
+            }
         }
     });
 });
